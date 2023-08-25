@@ -27,7 +27,14 @@ start_link() ->
 
 init([]) ->
     ExtPort = 8080,
-    {ok, {#{strategy => one_for_all}, [get_cowboy_child_spec({0, 0, 0, 0}, ExtPort)]}}.
+    ChildSpec = [
+        get_cowboy_child_spec({0, 0, 0, 0}, ExtPort),
+        #{
+            id => pg,
+            start => {pg, start_link, []}
+        }
+    ],
+    {ok, {#{strategy => one_for_all}, ChildSpec}}.
 
 -spec get_cowboy_child_spec(ip(), cowboy_port()) ->
     supervisor:child_spec().
