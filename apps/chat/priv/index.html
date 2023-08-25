@@ -55,6 +55,10 @@
         };
       }
 
+      function sendNickname() {
+        sendToServer('set_nickname', $("#nickname").val());
+      };
+
       function sendMessage() {
         sendToServer('send_message', $("#send_txt").val());
       };
@@ -126,6 +130,10 @@
 	<button type="button" onclick="toggleonnection()">connection</button>
       </p>
       <div id="connected">
+    <p>
+        <input type='text' id="nickname" value=></input>
+        <button type="button" onclick="sendNickname();">set nickname</button>
+    </p>
     <p>
 	  <input type='text' id="send_txt" value=></input>
 	  <button type="button" onclick="sendMessage();">send</button>
