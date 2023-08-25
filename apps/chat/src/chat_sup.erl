@@ -32,6 +32,10 @@ init([]) ->
         #{
             id => pg,
             start => {pg, start_link, []}
+        },
+        #{
+            id => bot,
+            start => {bot, start_link, []}
         }
     ],
     {ok, {#{strategy => one_for_all}, ChildSpec}}.

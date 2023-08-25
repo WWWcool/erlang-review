@@ -8,8 +8,6 @@
 
 -type state() :: #{}.
 
--define(PG_GROUP, connections).
-
 -spec init(_, _) -> {cowboy_websocket, _, _}.
 
 init(Req, Opts) ->
@@ -19,7 +17,7 @@ init(Req, Opts) ->
 
 websocket_init(_) ->
     logger:alert("websocket_init ..."),
-    pg:join(?PG_GROUP, self()),
+    conn_group:join(),
     {ok, #{}}.
 
 -spec websocket_handle(_, state()) -> {reply, _, state()} | {ok, state()}.
@@ -31,12 +29,12 @@ websocket_handle({text, Text}, State) ->
         {<<"send_message">>, Message} ->
             Nick = maps:get(nick, State, <<"Noname">>),
             ChatLine = erlang:iolist_to_binary([Nick, <<": ">>, Message]),
-            broadcast_message(ChatLine),
+            conn_group:broadcast_message(ChatLine),
             {{new_message, ChatLine}, State};
         {<<"set_nickname">>, Nick} ->
             Action = <<" joined chat.">>,
             ChatLine = erlang:iolist_to_binary([Nick, Action]),
-            broadcast_message(ChatLine),
+            conn_group:broadcast_message(ChatLine),
             {{new_message, ChatLine}, maps:put(nick, Nick, State)};
         Unknown ->
             logger:alert("get unknown message - ~p", [Unknown]),
@@ -65,17 +63,6 @@ encode({Type, Data}) ->
 -spec terminate(_, _, state()) -> ok.
 
 terminate(_Reason, _PartialReq, _State) ->
-    pg:leave(?PG_GROUP, self()),
+    conn_group:leave(),
     ok.
 
-broadcast_message(ChatLine) ->
-    broadcast_message(ChatLine, pg:get_members(?PG_GROUP)).
-
-broadcast_message(ChatLine, [Conn | Rest]) when Conn == self() ->
-    broadcast_message(ChatLine, Rest);
-broadcast_message(ChatLine, [Conn | Rest]) ->
-    logger:alert("sending chat line to ~p", [Conn]),
-    Conn ! {chat_line, ChatLine},
-    broadcast_message(ChatLine, Rest);
-broadcast_message(ChatLine, []) ->
-  ok.
